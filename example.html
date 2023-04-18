@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    
+<head>Trait selector</head>
+<body>
+    <div>
+        <object type="image/svg+xml" id="plant_svg"></object>
+    </div>
+</body>
+
+<script src="jquery-3.6.4.min.js"></script>
+<script src="dist/BrAPITraitSelector.js"></script>
+<script src="BrAPI.js"></script>
+<link rel="stylesheet" href="src/traits.css">
+
+<script type="text/javascript"> 
+;(function(){
+
+    var svgObject = document.getElementById('plant_svg');
+    svgObject.data = "plant.svg";
+    // console.log("svgObject", svgObject.data);
+
+
+$(document).ready(function(){
+
+    fetch('./conf.json').then(function(response) {
+        return response.json();
+    }).then(function (data) {
+    
+        var opts = undefined;
+        var base_url= data[0].server;
+        // var svg_file= data[0].svg;
+        var svg_container= "plant_svg";
+
+        //verify url is correct        
+        if (base_url.slice(0,8)!="https://" && base_url.slice(0,7)!="http://"){
+            base_url ="https://"+base_url;
+        }
+        if (base_url.slice(-1)!="/"){  base_url+="/";  }        
+        base_url+="brapi/v2";console.log("base_url", base_url);
+
+        //call trait selector
+        var ts = BrAPITraitSelector(base_url,svg_container,opts);
+    });
+
+
+    // var form = $(this).serializeArray().reduce(function(vals,entry){
+    //     vals[entry.name] = entry.value
+    //     return vals
+    // },{});
+
+
+    
+});
+})();
+
+</script>
+</html> 
+
