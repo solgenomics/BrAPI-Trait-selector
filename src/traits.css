@@ -1,0 +1,59 @@
+/* @import url(//fonts.googleapis.com/css?family=Oswald:400);
+* {
+  margin: 0;
+  padding: 0;
+}
+body {
+  background-color: #e9efec;
+  font-family: "Oswald", "Helvetica Newe", Helvetica, sans-serif;
+} */
+
+.tsTip {
+    position: absolute;
+    float: left;
+    min-width: 30px;
+    max-width: 300px;
+    padding: 5px 18px 6px;
+    border-radius: 2px;
+    background: rgba(255,255,255,.97);
+    color: #444;
+    font-size: 19px;
+    text-shadow: 0 1px 0 #fff;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.3;
+    letter-spacing: .06em;
+    box-shadow: 0 0 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.5);
+    -webkit-transform: all .3s;
+       -moz-transform: all .3s;
+        -ms-transform: all .3s;
+         -o-transform: all .3s;
+            transform: all .3s;
+    pointer-events: none;
+    overflow: hidden;
+    transition: transform 0.1s linear 0.1s;
+}
+
+.tsTip:hover {
+  transform:scale(1.25);
+  border: 1px solid;
+  border-color: #999999;
+  border-radius: 3px;
+  box-shadow: 5px 5px #999999;
+  /* To bring top */
+  position: relative;
+  z-index: 9999;
+ }
+
+  .tsTip:after {
+        position: relative;
+        left: 50%;
+        bottom: -6px;
+        content: "";
+        height: 0;
+        margin: 0 0 0 -6px;
+        border-right: 5px solid transparent;
+        border-left: 5px solid transparent;
+        border-top: 6px solid rgba(255,255,255,.95);
+        line-height: 0;
+  }
