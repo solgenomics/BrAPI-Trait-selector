@@ -25,10 +25,11 @@
 
 <script src="../jquery-3.6.4.min.js"></script>
 <script src="https://cdn.datatables.net/v/dt/dt-1.13.4/datatables.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.12.0/d3.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.12.0/d3.js"></script> -->
+<script src="https://d3js.org/d3.v5.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <script src="../dist/BrAPITraitSelector.js"></script>
-<script src="GraphicalFilter.js" charset="utf-8"></script>
+<script src="../build/GraphicalFilter.js" charset="utf-8"></script>
 <script src="../BrAPI.js"></script>
 
 <link rel="stylesheet" href="../src/traits.css">
@@ -41,20 +42,16 @@
 <script type="text/javascript"> 
 ;(function(){
 
-    var svgObject = document.getElementById('plant_svg');
-    svgObject.data = "plant.svg";
-    // console.log("svgObject", svgObject.data);
-
 
 $(document).ready(function(){
-    var base_url;
+
     fetch('./conf.json').then(function(response) {
         return response.json();
     }).then(function (data) {
     
         var opts = undefined;
-        base_url= data[0].server;
-        // var svg_file= data[0].svg;
+        var base_url= data[0].server;
+        var svg_file= data[0].svg;
         var svg_container= "plant_svg";
 
         //verify url is correct        
@@ -64,10 +61,14 @@ $(document).ready(function(){
         if (base_url.slice(-1)!="/"){  base_url+="/";  }        
         base_url+="brapi/v2";console.log("base_url", base_url);
 
-        //call trait selector
-        var ts = BrAPITraitSelector(base_url,svg_container,opts);
+        //fetch anatomy
+        fetch(data[0].anatomydb).then(function(response) {
+            return response.json();
+        }).then(anatomy =>{
+             //call trait selector
+            var ts = BrAPITraitSelector(base_url,svg_container,svg_file,anatomy,opts);
+        })    
     });
-
     
 });
 })();
