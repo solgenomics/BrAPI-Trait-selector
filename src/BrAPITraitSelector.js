@@ -5,23 +5,60 @@
 
 class BrAPITraitSelector {
 
-    constructor( brapi_endpoint, svg_container, opts) {
+    constructor( brapi_endpoint, svg_container, svg_file, anatomy_structure, opts) {
 
         //declare variables
         this.brapi_endpoint = brapi_endpoint;
         this.svg_container =  svg_container;
         let entityList = [];
         var currentGFilter = null;
-
+        console.log("anatomy_structure",anatomy_structure);
         //select container
         var svgContent = document.getElementById(svg_container).contentDocument;
 
+        d3.xml(svg_file)
+        .then(data => {
+            d3.select("#plant_svg").node().append(data.documentElement);
+
+            d3.selectAll('g').each(function(d,i) { 
+
+                if(anatomy_structure[this.id]){
+
+                    var subpart = anatomy_structure[this.id];
+                    for (let i = 0; i < subpart.length; i++) {
+                        console.log(subpart[i]);
+                        d3.select("#" + subpart[i] ).style("opacity", 0);
+
+                        // d3.select("#" + subpart[i] ).on("mouseover",function(d){
+                        //     d3.select(this).transition()        
+                        //     .duration(1000).style("opacity", 1);
+                        // });
+                        d3.select("#" + subpart[i] ).on("click",function(d){
+                            var element = d3.select(this);
+                            element.call(d3.zoom().on("zoom", function () {
+                                element.attr("transform", "translate(50) scale(1 0.5)")
+                              }));                   
+                        });
+                    }  
+
+                    d3.select("#" +this.id ).on("click",function(d){
+                        var subpart = anatomy_structure[this.id];
+                        for (let i = 0; i < subpart.length; i++) {
+                            console.log(subpart[i]);
+                            d3.select("#" + subpart[i] )
+                                .transition()        
+                                .duration(500)
+                                .style("opacity", 1);
+                        }                        
+                    });                    
+                }
+            });
+        });
 
         //get brapi data
         const brapi = BrAPI(brapi_endpoint, "2.0","auth");
         const traits = brapi.traits({'pageSize':50});
         
-        // load_table("#filter_div", "1");
 
         ///get non duplicated entities
         traits.map((trait)=>{
@@ -35,21 +72,20 @@ class BrAPITraitSelector {
         }).map(entity=>{
 
             //load attributes by entity
-            load_attributes(entity,svgContent, function(d){
-                        //console.log("hi");
-                    });
+            // load_attributes(entity,svgContent, function(d){
+            //             //console.log("hi");
+            //         });
         });
         
 
         function load_attributes(entity,svgContent){
-            
+
             //Getting the attributes data
             if(!entity){
                 return;
             }
-            console.log("entity", entity);
+            // console.log("entity", entity);
             var svg_entity = svgContent.getElementById(entity);
-            // svg_entity.setAttributeNS(null,"x",50);
 
             if(svg_entity){
 
@@ -88,19 +124,6 @@ class BrAPITraitSelector {
                 tipW = 100,
                 tipH = 100;
 
-                //adding mouse events to each entity                
-                svg_entity.addEventListener('mouseenter', function (event) { 
-                    const { scale, x, y } = getTransformParameters(svg_entity);
-                    let dScale = 0.1;
-                    svg_entity.style.transform = getTransformString(scale + dScale, x, y);
-                 });
-
-                svg_entity.addEventListener('mouseleave', function (event) { 
-                    const { scale, x, y } = getTransformParameters(svg_entity);
-                    let dScale = -0.1;
-                    svg_entity.style.transform = getTransformString(scale + dScale, x, y);
-                });
-
                 //adding attributes list to entity popups on click
                 svg_entity.addEventListener('click', function (event) {
                     tip.css({
@@ -109,20 +132,12 @@ class BrAPITraitSelector {
                         "z-index": 999999
                     });
 
-                    //adding svg popups with atrributes data string
-
-                    // var stringHTML  ="Traits:";
-                    // for( var i = 0; i < traitList[entity].length ; i++ ){
-                    //     stringHTML += "<a href='#'>" + traitList[entity][i] + "</a><br>";
-                    // }
-                    // document.getElementById("tsTip_" + entity).innerHTML =  stringHTML + "<br><button id='x' onclick='alert();'>X</button>";
-                    
-                    // tip.show();
-                    console.log("e",entity, attributesList[entity]);
-
-                    
-                    load_table("#filter_div", '#filtered_results', attributesList[entity]);
-
+                    load_table("#filter_div", '#filtered_results', attributesList[entity],function(){
+                        alert(":)");
+                        $("#dropdown0").click();
+                        $("#dropdown0").trigger("click");
+                        console.log("hace algo");
+                    });                   
 
                 }, false);
 
@@ -130,7 +145,7 @@ class BrAPITraitSelector {
             }
         }
 
-        function load_table(filterDiv, filterTable, attribute_ids){
+        function load_table(filterDiv, filterTable, attribute_ids, callback){
 
             if ($.fn.dataTable.isDataTable(filterTable)) { 
                 $(filterTable).DataTable().clear().destroy();
@@ -152,6 +167,7 @@ class BrAPITraitSelector {
                 baseCols,
                 ["Accession","Accession Id"],
                 undefined,
+                false
             );
             currentGFilter.draw(
                 filterDiv,
@@ -171,24 +187,6 @@ class BrAPITraitSelector {
             }
 
         }
-
-        //zooming in and out entity
-        const getTransformParameters = (element) => {
-            const transform = element.style.transform;
-            let scale = 1,
-              x = 0,
-              y = 0;
-            if (transform.includes("scale"))
-              scale = parseFloat(transform.slice(transform.indexOf("scale") + 6));
-            if (transform.includes("translateX"))
-              x = parseInt(transform.slice(transform.indexOf("translateX") + 11));
-            if (transform.includes("translateY"))
-              y = parseInt(transform.slice(transform.indexOf("translateY") + 11));
-            return { scale, x, y };
-        };
-
-        const getTransformString = (scale, x, y) =>
-        "scale(" + scale + ") " + "translateX(" + x + "%) translateY(" + y + "%)";
 
     }
 }
