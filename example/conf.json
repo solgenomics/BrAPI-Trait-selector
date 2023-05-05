@@ -1,4 +1,5 @@
 [{
-    "server":"https://server.org",
-    "svg":"plant.svg"
+    "server":"https://www.crop-diversity.org/mgis5/",
+    "svg":"plant_v1.0.svg",
+    "anatomydb":"planteome.json"
 }]

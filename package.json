@@ -15,9 +15,10 @@
     "verror": "^1.10.0"
   },
   "devDependencies": {
-    "rollup": "^3.20.2"
+    "rollup": "^3.20.7"
   },
   "scripts": {
+    "rollup": "rollup" ,
     "start": "mkdir -p dist && rollup -c"
   },
   "repository": {
