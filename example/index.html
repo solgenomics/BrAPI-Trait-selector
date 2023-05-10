@@ -3,10 +3,8 @@
     
 <head>Trait selector</head>
 <body>
-    <div>
-        <object type="image/svg+xml" id="plant_svg"></object>
-    </div>
-    <div id="filter_div" style="margin:1em"></div>
+  <div id="plant_svg"></div>
+  <!-- <div id="filter_div" style="margin:1em"></div> -->
 
     <div class="brapp-container" style="position:relative;">
         <div value="brapp-wrapper" style="display:inline-block; border:solid 1px #ccc;border-radius:4px;">
@@ -30,6 +28,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <script src="../dist/BrAPITraitSelector.js"></script>
 <script src="../build/GraphicalFilter.js" charset="utf-8"></script>
+<script src="../GF.js" charset="utf-8"></script>
 <script src="../BrAPI.js"></script>
 
 <link rel="stylesheet" href="../src/traits.css">
@@ -53,6 +52,8 @@ $(document).ready(function(){
         var base_url= data[0].server;
         var svg_file= data[0].svg;
         var svg_container= "plant_svg";
+        var traits_div = "filter_div";
+        var filtered_table = "filtered_results";
 
         //verify url is correct        
         if (base_url.slice(0,8)!="https://" && base_url.slice(0,7)!="http://"){
@@ -66,7 +67,7 @@ $(document).ready(function(){
             return response.json();
         }).then(anatomy =>{
              //call trait selector
-            var ts = BrAPITraitSelector(base_url,svg_container,svg_file,anatomy,opts);
+            var ts = BrAPITraitSelector(base_url,svg_container,svg_file,traits_div,filtered_table,anatomy,opts);
         })    
     });
     
