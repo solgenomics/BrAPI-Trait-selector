@@ -7,17 +7,22 @@
   <!-- <div id="filter_div" style="margin:1em"></div> -->
 
     <div class="brapp-container" style="position:relative;">
+      
         <div value="brapp-wrapper" style="display:inline-block; border:solid 1px #ccc;border-radius:4px;">
           <div class="brapp-body" style="background-color:#fff;border-top-left-radius:4px;border-top-right-radius:4px;">
-            <div style="width:1000px;padding:1em;position:relative;">
+            <div style="width:700px;padding:1em;position:relative;">
               <div id="filter_div" style="margin:1em"></div>
-              <div style="width:100%;overflow-x:scroll;">
+                            
+              <div style="width:50%;overflow-x:scroll;">
                 <table id="filtered_results"></table>
               </div>
             </div>
+            <div><button class="btn btn-primary float-right" id="button_export" type="button">Export list</button></div>
+            <br><br><br>
             <div style="clear:both"></div>
           </div>
         </div>
+
       </div>
 </body>
 
@@ -54,6 +59,8 @@ $(document).ready(function(){
         var svg_container= "plant_svg";
         var traits_div = "filter_div";
         var filtered_table = "filtered_results";
+
+        $("#button_export").hide();
 
         //verify url is correct        
         if (base_url.slice(0,8)!="https://" && base_url.slice(0,7)!="http://"){

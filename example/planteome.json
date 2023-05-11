@@ -1,13 +1,14 @@
 {
-    "leaf" : [],
-    "flower" : [
-        "tepal",
-        "anther",
-        "petal",
-        "pistil"
-    ],
-    "inflorescence bud" : [
-        "flower",
-        "male_flower"
-    ]
+    "leaf": {
+        "entities": ["leaf"]
+    },
+    "flower": {
+        "entities": ["flower","flowers", "tepal"]
+    },
+    "petal": {
+        "entities": ["flower", "petal","petals"]
+    },
+    "infructescence" :{
+        "entities" : ["fruit","fruits","infructescence"]
+    }    
 }
