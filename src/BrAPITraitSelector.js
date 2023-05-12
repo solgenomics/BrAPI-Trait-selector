@@ -7,11 +7,6 @@ class BrAPITraitSelector {
 
     constructor( brapi_endpoint, svg_container, svg_file, traits_div,filtered_table, svg_config, opts) {
 
-        // const entityRelationship = svg_config.reduce((a, { SVGid, traitAttributesFrom }) => {
-        //     a[SVGid] = traitAttributesFrom ;
-        //     return a;
-        // }, {});
-
         //declare variables
         this.brapi_endpoint = brapi_endpoint;
         this.svg_container =  svg_container;
@@ -19,77 +14,70 @@ class BrAPITraitSelector {
         let entityList = [];
         var currentGFilter = null;
 
-        //load svg in the container
-        d3.xml(svg_file)
-        .then(data => {
-            d3.select("#" + svg_container).node().append(data.documentElement);
 
-            d3.selectAll('g').each(function(d,i) { 
-                var plant_part = this.id;
-                var entity_searchable = [this.id];
-                
+        var svgContainer = document.getElementById(svg_container);
+        var svgContent;
+
+        // Load SVG.
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => {
+            svgContent = xhr.responseXML.documentElement;
+            svgContainer.appendChild(svgContent);
+            svgContent.querySelectorAll(".brapi-zoomable").forEach(function(x) {
+                x.style.display = "none";
+                x.style.opacity = 0;
+            });
+
+            svgContent.querySelectorAll(".brapi-entity").forEach(function(x) {
+
+                var plant_part = x.getAttribute("name");
+                var zoomable = svgContent.querySelectorAll('.brapi-zoomable[name="' + x.getAttribute("name") + '"]');
+                console.log("zoomable", zoomable);
+
+                var entity_searchable = [plant_part];
+
                 if(svg_config[plant_part]){
                     entity_searchable = svg_config[plant_part].entities;
-                    // d3.select("#" + plant_part ).on("click",function(d){
-                        // var element = d3.select(this);
-                        // load_attributes(plant_part, svg_config[plant_part].entities);
-                        // element.call(d3.zoom().on("zoom", function () {
-                        //     element.attr("transform", "translate() scale(1.5 1.5)")
-                        //   }));                   
-                    // });
-
-
-                    // d3.select("#" +this.id ).on("click",function(d){c
-                    //     var subpart = svg_config[this.id];
-                    //     for (let i = 0; i < subpart.length; i++) {
-                    //         console.log(subpart[i]);
-
-                    //     }                        
-                    // });                    
                 } 
-
-                if(plant_part){
-                    d3.select("#" + plant_part ).on("click",function(d){
-                        load_attributes(plant_part, entity_searchable);              
-                    });
-                    d3.select("#" + plant_part ).on("mouseover",function(d){
-                        d3.select("#" + plant_part ).style("cursor", "pointer"); 
-                    });
-
-                    if( plant_part.search('-brapi-zoomable') >0) { //g
-
-                        var plant_organ = plant_part.replace('-brapi-zoomable','');
-                        var plant_group = plant_part;
-
-                        d3.select("#" + plant_group ).style("display","none");
-
-                        d3.select("#" + plant_organ).on("mouseover",function(d){
-                            d3.select("#" + plant_group ).style("display","inline");
-                        });
-                        
-
-                        function equalToEventTarget() {
-                            return this == d3.event.target;
-                        }
-                        
-                        d3.select("body").on("click",function(){
-                            // var outside = d3.select("#" + plant_group).filter(equalToEventTarget).empty();
-                            // if (outside) {
-                                d3.select("#" + plant_group).style("display","none");
-                            // }
-                        });
-
-
-                    } else {
-                        d3.select("#" + plant_part).on("mouseover",function(d){ console.log("iii");
-                            d3.select(this).transition().style("fill", "#007DBC");
-                        });
+                
+                x.addEventListener('mouseover', (e) => {
+                    e.target.style.cursor="pointer";
+                    
+                    if(zoomable.length >0){
+                        zoomable[0].style.display = "block";
+                        window.setTimeout(function(){
+                            zoomable[0].style.opacity = 1;
+                          },1000);
                     }
-                }
-            });
-        });
+                });
+                x.addEventListener('mouseleave', (e) => {
 
+                });
+                x.addEventListener('click', (e) => {
+                    load_attributes(plant_part, entity_searchable); 
+                    if(zoomable){
+                    if (e.target.closest(".brapi-zoomable")) return;
+                        zoomable[0].style.display = "none";
+                    }
+                });
+            });
+
+            svgContent.addEventListener('click', (e) => {
+                if (e.target.closest(".brapi-zoomable")) return;
+                svgContent.querySelectorAll(".brapi-zoomable").forEach(function(x) {
+                    x.style.display = "none";
+                });
+            });
+        };
+
+        xhr.open("GET", svg_file);
+        xhr.responseType = "document";
+        xhr.send();
         
+        xhr.onerror = () => {
+            console.log("Error while getting XML.");
+        };     
+    
 
         //get brapi data
         const brapi = BrAPI(brapi_endpoint, "2.0","auth");
@@ -145,13 +133,11 @@ class BrAPITraitSelector {
             // var attributevalues = brapi.search_attributevalues({
             var attributevalues = brapi.simple_brapi_call({
                     'defaultMethod': 'post',
-                    'urlTemplate': '/search/attributevalues',
-                    // 'params': {"attributeDbIds":[153]} //attribute_ids }
-                    'params': {"attributeDbIds": attribute_ids },
+                    'urlTemplate': '/search/attributevalues?pageSize=100',
+                    'params': {"attributeDbIds": attribute_ids                        
+                    },
                     'behavior': 'fork'
             });
-
-            // GF(attributevalues,attribute_names, filterDiv, filterTable);
 
             currentGFilter = GraphicalFilter(
                 attributevalues,

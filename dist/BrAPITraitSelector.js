@@ -24,72 +24,79 @@
           this.svg_config =  svg_config;
           var currentGFilter = null;
 
-          //load svg in the container
-          d3.xml(svg_file)
-          .then(data => {
-              d3.select("#" + svg_container).node().append(data.documentElement);
 
-              d3.selectAll('g').each(function(d,i) { 
-                  var plant_part = this.id;
-                  var entity_searchable = [this.id];
-                  
+          var svgContainer = document.getElementById(svg_container);
+            var svgContent;
+
+            // Load SVG.
+            const xhr = new XMLHttpRequest();
+            xhr.onload = () => {
+              svgContent = xhr.responseXML.documentElement;
+              svgContainer.appendChild(svgContent);
+              // svgContent.querySelectorAll("[name]").forEach(function(x) {console.log(x.getAttribute("name"));});
+              svgContent.querySelectorAll(".brapi-zoomable").forEach(function(x) {
+                  // x.style.display = "none";
+                  x.style.opacity = 0;
+              });
+
+              svgContent.querySelectorAll(".brapi-entity").forEach(function(x) {
+                  console.log("Searching for " + x.getAttribute("name"));
+                  var targets = svgContent.querySelectorAll('[name="' + x.getAttribute("name") + '"]');                
+
+                  var plant_part = x.getAttribute("name");
+                  var zoomable = svgContent.querySelectorAll('.brapi-zoomable[name="' + x.getAttribute("name") + '"]');
+                  console.log("zoomable", zoomable);
+
+                  var entity_searchable = [plant_part];
+
                   if(svg_config[plant_part]){
                       entity_searchable = svg_config[plant_part].entities;
-                      // d3.select("#" + plant_part ).on("click",function(d){
-                          // var element = d3.select(this);
-                          // load_attributes(plant_part, svg_config[plant_part].entities);
-                          // element.call(d3.zoom().on("zoom", function () {
-                          //     element.attr("transform", "translate() scale(1.5 1.5)")
-                          //   }));                   
-                      // });
-
-
-                      // d3.select("#" +this.id ).on("click",function(d){c
-                      //     var subpart = svg_config[this.id];
-                      //     for (let i = 0; i < subpart.length; i++) {
-                      //         console.log(subpart[i]);
-
-                      //     }                        
-                      // });                    
                   } 
-
-                  if(plant_part){
-                      d3.select("#" + plant_part ).on("click",function(d){
-                          load_attributes(plant_part, entity_searchable);              
-                      });
-                      d3.select("#" + plant_part ).on("mouseover",function(d){
-                          d3.select("#" + plant_part ).style("cursor", "pointer"); 
-                      });
-
-                      if( plant_part.search('-brapi-zoomable') >0) { //g
-
-                          var plant_organ = plant_part.replace('-brapi-zoomable','');
-                          var plant_group = plant_part;
-
-                          d3.select("#" + plant_group ).style("display","none");
-
-                          d3.select("#" + plant_organ).on("mouseover",function(d){
-                              d3.select("#" + plant_group ).style("display","inline");
-                          });
-                          
-                          d3.select("body").on("click",function(){
-                              // var outside = d3.select("#" + plant_group).filter(equalToEventTarget).empty();
-                              // if (outside) {
-                                  d3.select("#" + plant_group).style("display","none");
-                              // }
-                          });
-
-
-                      } else {
-                          d3.select("#" + plant_part).on("mouseover",function(d){ console.log("iii");
-                              d3.select(this).transition().style("fill", "#007DBC");
-                          });
+                  
+                  x.addEventListener('mouseover', (e) => {
+                      e.target.style.cursor="pointer";
+                      
+                      if(zoomable.length >0){
+                          // zoomable[0].style.opacity = 0;
+                          // zoomable[0].style.display = "block";
+                          window.setTimeout(function(){
+                              zoomable[0].style.opacity = 1;
+                            },0);
                       }
-                  }
+                  });
+                  x.addEventListener('mouseleave', (e) => {
+                      targets.forEach((n) => {
+                      });
+                  });
+                  x.addEventListener('click', (e) => {
+                      load_attributes(plant_part, entity_searchable); 
+                      if(zoomable){
+                      if (e.target.closest(".brapi-zoomable")) return;
+                      
+                      window.setTimeout(function(){
+                          zoomable[0].style.opacity = 0;
+                        },700);
+                      //   zoomable[0].style.display = "none";
+                      }
+                  });
               });
-          });
 
+              svgContent.addEventListener('click', (e) => {
+                  if (e.target.closest(".brapi-zoomable")) return;
+                  svgContent.querySelectorAll(".brapi-zoomable").forEach(function(x) {
+                      x.style.display = "none";
+                  });
+              });
+          };
+
+          xhr.open("GET", svg_file);
+          xhr.responseType = "document";
+          xhr.send();
           
+          xhr.onerror = () => {
+              console.log("Error while getting XML.");
+          };     
+      
 
           //get brapi data
           const brapi = BrAPI(brapi_endpoint, "2.0","auth");
@@ -106,10 +113,6 @@
               var svg_entity =  d3.select("#" + entity);
               
               if(svg_entity){
-
-                  var traitIdList = [];
-                  traitIdList.push("1");
-                  // attributesList[entity]=[];
 
                   // var attributes = brapi.search_attributes({
                   var attributes = brapi.simple_brapi_call({
@@ -137,7 +140,7 @@
           }
 
           function load_table(filterDiv, filterTable, attribute_ids, attribute_names, callback){
-              // alert(":)");
+
               $("#button_export").show();
               
               if ($.fn.dataTable.isDataTable(filterTable)) { 
@@ -148,9 +151,10 @@
               // var attributevalues = brapi.search_attributevalues({
               var attributevalues = brapi.simple_brapi_call({
                       'defaultMethod': 'post',
-                      'urlTemplate': '/search/attributevalues',
+                      'urlTemplate': '/search/attributevalues?pageSize=100',
                       // 'params': {"attributeDbIds":[153]} //attribute_ids }
-                      'params': {"attributeDbIds": attribute_ids },
+                      'params': {"attributeDbIds": attribute_ids                        
+                      },
                       'behavior': 'fork'
               });
 
