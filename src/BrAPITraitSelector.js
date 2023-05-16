@@ -115,8 +115,9 @@ class BrAPITraitSelector {
             if(!entity){
                 return;
             }
-            var svg_entity =  d3.select("#" + entity);
-            
+            document.getElementById(traits_div).innerHTML =  "";
+            var svg_entity = document.querySelectorAll('[name="' + entity + '"]');
+
             if(svg_entity){
 
                 // var attributes = brapi.search_attributes({
@@ -143,10 +144,9 @@ class BrAPITraitSelector {
             }
         }
 
-        function load_table(filterDiv, filterTable, attribute_ids, attribute_names, callback){
+        function load_table(filterDiv, filterTable, attribute_ids, callback){
 
-            $("#button_export").show();
-            
+          
             if ($.fn.dataTable.isDataTable(filterTable)) { 
                 $(filterTable).DataTable().clear().destroy();
                 $(filterTable).empty();                       
