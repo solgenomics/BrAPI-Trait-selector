@@ -16,6 +16,7 @@ class BrAPITraitSelector {
 
 
         var svgContainer = document.getElementById(svg_container);
+        var traitListContainer = document.querySelector("#" + traits_div);
         var svgContent;
 
         // Load SVG.
@@ -26,47 +27,72 @@ class BrAPITraitSelector {
             svgContent.querySelectorAll(".brapi-zoomable").forEach(function(x) {
                 x.style.display = "none";
                 x.style.opacity = 0;
-            });
+            });            
 
             svgContent.querySelectorAll(".brapi-entity").forEach(function(x) {
 
-                var plant_part = x.getAttribute("name");
+
+                var entity = x.getAttribute("name");
                 var zoomable = svgContent.querySelectorAll('.brapi-zoomable[name="' + x.getAttribute("name") + '"]');
-                console.log("zoomable", zoomable);
+                var entity_searchable = [entity];
 
-                var entity_searchable = [plant_part];
-
-                if(svg_config[plant_part]){
-                    entity_searchable = svg_config[plant_part].entities;
+                if(svg_config[entity]){
+                    entity_searchable = svg_config[entity].entities;
                 } 
-                
+
+                //creates div for entity popups
+                var tip = document.createElement("div");
+                tip.id = 'tsTip_'+ entity;
+                tip.classList.add("tsTip");
+                document.body.appendChild(tip);
+                tip.style.display = "none";
+
                 x.addEventListener('mouseover', (e) => {
                     e.target.style.cursor="pointer";
                     
                     if(zoomable.length >0){
-                        zoomable[0].style.display = "block";
+                        zoomable[0].style.display = "inline";
                         window.setTimeout(function(){
                             zoomable[0].style.opacity = 1;
-                          },1000);
-                    }
-                });
-                x.addEventListener('mouseleave', (e) => {
+                          },100);
+                    }                   
+
+                    //adding svg popups with name
+                    document.getElementById("tsTip_" + entity).innerHTML =  entity;
+                    tip.style.top = e.pageY - 30 + 'px';
+                    tip.style.left = e.pageX  + 10 + 'px';
+                    tip.style.display = "inline";
 
                 });
+                x.addEventListener('mouseleave', (e) => {
+                    tip.style.display = "none";
+                });
                 x.addEventListener('click', (e) => {
-                    load_attributes(plant_part, entity_searchable); 
-                    if(zoomable){
-                    if (e.target.closest(".brapi-zoomable")) return;
+                    //load data on click
+                    load_attributes(entity, entity_searchable);
+
+                    //shows combobox
+                    tip.style.display = "none";
+                    traitListContainer.style.top = e.clientY + 'px';
+                    traitListContainer.style.left = e.clientX + 'px';
+                    traitListContainer.style.display = "inline";
+
+                    //prevents hiding zoomed elements 
+                    if(zoomable.length >0){
+                        if (e.target.closest(".brapi-zoomable")) return;
                         zoomable[0].style.display = "none";
-                    }
+                    }                    
                 });
             });
 
+            // Hides zoom and combobox on click outside element
             svgContent.addEventListener('click', (e) => {
                 if (e.target.closest(".brapi-zoomable")) return;
                 svgContent.querySelectorAll(".brapi-zoomable").forEach(function(x) {
                     x.style.display = "none";
                 });
+                if (e.target.closest(".brapi-entity")) return;
+                traitListContainer.style.display = "none";
             });
         };
 
@@ -89,8 +115,6 @@ class BrAPITraitSelector {
             if(!entity){
                 return;
             }
-            if(entity == "layer1") return;
-
             var svg_entity =  d3.select("#" + entity);
             
             if(svg_entity){
@@ -113,7 +137,6 @@ class BrAPITraitSelector {
                     });
                     return traitDbIds;
                 }).all(ids =>{                    
-                    console.log("ax",ids);
                     load_table("#" + traits_div, '#' + filtered_table, ids);
                 });                   
                 
@@ -129,7 +152,7 @@ class BrAPITraitSelector {
                 $(filterTable).empty();                       
             };
             if(attribute_ids.length < 1) return;
-            console.log("attribute_ids",attribute_ids.length);
+
             // var attributevalues = brapi.search_attributevalues({
             var attributevalues = brapi.simple_brapi_call({
                     'defaultMethod': 'post',
