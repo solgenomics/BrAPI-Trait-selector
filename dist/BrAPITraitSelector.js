@@ -13,11 +13,6 @@
 
       constructor( brapi_endpoint, svg_container, svg_file, traits_div,filtered_table, svg_config, opts) {
 
-          // const entityRelationship = svg_config.reduce((a, { SVGid, traitAttributesFrom }) => {
-          //     a[SVGid] = traitAttributesFrom ;
-          //     return a;
-          // }, {});
-
           //declare variables
           this.brapi_endpoint = brapi_endpoint;
           this.svg_container =  svg_container;
@@ -26,66 +21,83 @@
 
 
           var svgContainer = document.getElementById(svg_container);
-            var svgContent;
+          var traitListContainer = document.querySelector("#" + traits_div);
+          var svgContent;
 
-            // Load SVG.
-            const xhr = new XMLHttpRequest();
-            xhr.onload = () => {
+          // Load SVG.
+          const xhr = new XMLHttpRequest();
+          xhr.onload = () => {
               svgContent = xhr.responseXML.documentElement;
               svgContainer.appendChild(svgContent);
-              // svgContent.querySelectorAll("[name]").forEach(function(x) {console.log(x.getAttribute("name"));});
               svgContent.querySelectorAll(".brapi-zoomable").forEach(function(x) {
-                  // x.style.display = "none";
+                  x.style.display = "none";
                   x.style.opacity = 0;
-              });
+              });            
 
               svgContent.querySelectorAll(".brapi-entity").forEach(function(x) {
-                  console.log("Searching for " + x.getAttribute("name"));
-                  var targets = svgContent.querySelectorAll('[name="' + x.getAttribute("name") + '"]');                
 
-                  var plant_part = x.getAttribute("name");
+
+                  var entity = x.getAttribute("name");
                   var zoomable = svgContent.querySelectorAll('.brapi-zoomable[name="' + x.getAttribute("name") + '"]');
-                  console.log("zoomable", zoomable);
+                  var entity_searchable = [entity];
 
-                  var entity_searchable = [plant_part];
-
-                  if(svg_config[plant_part]){
-                      entity_searchable = svg_config[plant_part].entities;
+                  if(svg_config[entity]){
+                      entity_searchable = svg_config[entity].entities;
                   } 
-                  
+
+                  //creates div for entity popups
+                  var tip = document.createElement("div");
+                  tip.id = 'tsTip_'+ entity;
+                  tip.classList.add("tsTip");
+                  document.body.appendChild(tip);
+                  tip.style.display = "none";
+
                   x.addEventListener('mouseover', (e) => {
                       e.target.style.cursor="pointer";
                       
                       if(zoomable.length >0){
-                          // zoomable[0].style.opacity = 0;
-                          // zoomable[0].style.display = "block";
+                          zoomable[0].style.display = "inline";
                           window.setTimeout(function(){
                               zoomable[0].style.opacity = 1;
-                            },0);
-                      }
+                            },100);
+                      }                   
+
+                      //adding svg popups with name
+                      document.getElementById("tsTip_" + entity).innerHTML =  entity;
+                      tip.style.top = e.pageY - 30 + 'px';
+                      tip.style.left = e.pageX  + 10 + 'px';
+                      tip.style.display = "inline";
+
                   });
                   x.addEventListener('mouseleave', (e) => {
-                      targets.forEach((n) => {
-                      });
+                      tip.style.display = "none";
                   });
                   x.addEventListener('click', (e) => {
-                      load_attributes(plant_part, entity_searchable); 
-                      if(zoomable){
-                      if (e.target.closest(".brapi-zoomable")) return;
-                      
-                      window.setTimeout(function(){
-                          zoomable[0].style.opacity = 0;
-                        },700);
-                      //   zoomable[0].style.display = "none";
-                      }
+                      //load data on click
+                      load_attributes(entity, entity_searchable);
+
+                      //shows combobox
+                      tip.style.display = "none";
+                      traitListContainer.style.top = e.clientY + 'px';
+                      traitListContainer.style.left = e.clientX + 'px';
+                      traitListContainer.style.display = "inline";
+
+                      //prevents hiding zoomed elements 
+                      if(zoomable.length >0){
+                          if (e.target.closest(".brapi-zoomable")) return;
+                          zoomable[0].style.display = "none";
+                      }                    
                   });
               });
 
+              // Hides zoom and combobox on click outside element
               svgContent.addEventListener('click', (e) => {
                   if (e.target.closest(".brapi-zoomable")) return;
                   svgContent.querySelectorAll(".brapi-zoomable").forEach(function(x) {
                       x.style.display = "none";
                   });
+                  if (e.target.closest(".brapi-entity")) return;
+                  traitListContainer.style.display = "none";
               });
           };
 
@@ -108,10 +120,9 @@
               if(!entity){
                   return;
               }
-              if(entity == "layer1") return;
-
-              var svg_entity =  d3.select("#" + entity);
-              
+              document.getElementById(traits_div).innerHTML =  "";
+              var svg_entity = document.querySelectorAll('[name="' + entity + '"]');
+  console.log(svg_entity);
               if(svg_entity){
 
                   // var attributes = brapi.search_attributes({
@@ -132,33 +143,28 @@
                       });
                       return traitDbIds;
                   }).all(ids =>{                    
-                      console.log("ax",ids);
                       load_table("#" + traits_div, '#' + filtered_table, ids);
                   });                   
                   
               }
           }
 
-          function load_table(filterDiv, filterTable, attribute_ids, attribute_names, callback){
+          function load_table(filterDiv, filterTable, attribute_ids, callback){
 
-              $("#button_export").show();
-              
+            
               if ($.fn.dataTable.isDataTable(filterTable)) { 
                   $(filterTable).DataTable().clear().destroy();
                   $(filterTable).empty();                       
               }            if(attribute_ids.length < 1) return;
-              console.log("attribute_ids",attribute_ids.length);
+
               // var attributevalues = brapi.search_attributevalues({
               var attributevalues = brapi.simple_brapi_call({
                       'defaultMethod': 'post',
                       'urlTemplate': '/search/attributevalues?pageSize=100',
-                      // 'params': {"attributeDbIds":[153]} //attribute_ids }
                       'params': {"attributeDbIds": attribute_ids                        
                       },
                       'behavior': 'fork'
               });
-
-              // GF(attributevalues,attribute_names, filterDiv, filterTable);
 
               currentGFilter = GraphicalFilter(
                   attributevalues,
