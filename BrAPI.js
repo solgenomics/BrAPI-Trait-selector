@@ -4821,7 +4821,7 @@ class BrAPICallController {
             if (!this.brapi_base_url.startsWith("https")) {
                 console.warn("You should send the BrAPI.js authentication token over https!");
             }
-            console.log("auth", this.brapi_auth_token);
+
             fetch_opts.headers.Authorization = "Bearer " + this.brapi_auth_token;
         }
         // console.log("fetch(",url,",",fetch_opts,")")
