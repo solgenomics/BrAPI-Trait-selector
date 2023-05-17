@@ -1,0 +1,6 @@
+[{
+    "server":"https://musabase.org/",
+    "servertype" : "breeding",
+    "svg":"plant_v1.1.svg",
+    "svgentities":"planteome.json"
+}]
