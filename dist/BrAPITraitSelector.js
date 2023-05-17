@@ -11,14 +11,17 @@
 
   class BrAPITraitSelector {
 
-      constructor( brapi_endpoint, svg_container, svg_file, traits_div,filtered_table, svg_config, opts) {
+      constructor( brapi_endpoint, svg_container, svg_file, traits_div,filtered_table, svg_config, server_type, opts) {
 
           //declare variables
           this.brapi_endpoint = brapi_endpoint;
           this.svg_container =  svg_container;
           this.svg_config =  svg_config;
+          this.server_type = server_type;
           var currentGFilter = null;
 
+          //get brapi data
+          const brapi = BrAPI(brapi_endpoint, "2.0","auth");
 
           var svgContainer = document.getElementById(svg_container);
           var traitListContainer = document.querySelector("#" + traits_div);
@@ -32,10 +35,9 @@
               svgContent.querySelectorAll(".brapi-zoomable").forEach(function(x) {
                   x.style.display = "none";
                   x.style.opacity = 0;
-              });            
+              });
 
               svgContent.querySelectorAll(".brapi-entity").forEach(function(x) {
-
 
                   var entity = x.getAttribute("name");
                   var zoomable = svgContent.querySelectorAll('.brapi-zoomable[name="' + x.getAttribute("name") + '"]');
@@ -67,11 +69,12 @@
                       tip.style.top = e.pageY - 30 + 'px';
                       tip.style.left = e.pageX  + 10 + 'px';
                       tip.style.display = "inline";
-
                   });
+
                   x.addEventListener('mouseleave', (e) => {
                       tip.style.display = "none";
                   });
+
                   x.addEventListener('click', (e) => {
                       //load data on click
                       load_attributes(entity, entity_searchable);
@@ -101,18 +104,67 @@
               });
           };
 
-          xhr.open("GET", svg_file);
-          xhr.responseType = "document";
-          xhr.send();
-          
-          xhr.onerror = () => {
-              console.log("Error while getting XML.");
-          };     
-      
+          if( server_type == "germplasm"){
 
-          //get brapi data
-          const brapi = BrAPI(brapi_endpoint, "2.0","auth");
+              xhr.open("GET", svg_file);
+              xhr.responseType = "document";
+              xhr.send();
+              
+              xhr.onerror = () => {
+                  console.log("Error while getting XML.");
+              };
+          }    
+          if (server_type == "breeding"){
+              load_studies();
+              
+              document.querySelector("#studies_submit").addEventListener('click', (e) => {
+                  e.preventDefault();
+                  xhr.open("GET", svg_file);
+                  xhr.responseType = "document";
+                  xhr.send();
+                  
+                  xhr.onerror = () => {
+                      console.log("Error while getting XML.");
+                  };
+              });
+          }
+
+
           
+          function load_studies(){
+
+              var studies = brapi.simple_brapi_call({
+                  'defaultMethod': 'get',
+                  'urlTemplate': '/studies',
+                  'behavior' : 'fork'
+              });
+
+              var select = document.createElement("select");
+              select.id = "studies_select";
+              select.multiple = "multiple";
+              select.classList.add('form-control');
+
+              studies.map(study => {
+                  var option = document.createElement("option");
+                  option.value = study.studyDbId;
+                  option.text = study.studyName;
+                  select.appendChild(option);       
+              });
+
+              var label = document.createElement("label");
+              label.innerHTML = "Choose your trials:<br>";
+              label.htmlFor = "trials";
+
+              var submit = document.createElement("button");
+              submit.classList.add('btn','btn-outline-primary');
+              submit.innerHTML = "Submit";
+              submit.id = "studies_submit";
+              
+           
+              document.getElementById("filter_trials_div").appendChild(label).appendChild(select);
+              document.getElementById("filter_trials_div").appendChild(submit);
+          }
+
 
           function load_attributes(entity,entitiesRelated){
 
@@ -122,34 +174,48 @@
               }
               document.getElementById(traits_div).innerHTML =  "";
               var svg_entity = document.querySelectorAll('[name="' + entity + '"]');
-  console.log(svg_entity);
-              if(svg_entity){
+              var attributes;
 
-                  // var attributes = brapi.search_attributes({
-                  var attributes = brapi.simple_brapi_call({
-                          'defaultMethod': 'post',
-                          'urlTemplate': '/search/attributes',
-                          'params': {"traitEntities":entitiesRelated},
-                          'behavior' : 'fork'
-                  });
+              if(svg_entity){
+                  
+                  //Brapi call according to which trait 
+                  if( server_type == "germplasm"){
+
+                      // var attributes = brapi.search_attributes({
+                      attributes = brapi.simple_brapi_call({
+                              'defaultMethod': 'post',
+                              'urlTemplate': '/search/attributes',
+                              'params': {"traitEntities":entitiesRelated},
+                              'behavior' : 'fork'
+                      });
+
+                  } else if (server_type = "breeding"){
+                      var selectedStudies = document.getElementById("studies_select").selectedOptions;
+                      var studyIds = [];
+
+                      for (let i = 0; i < selectedStudies.length; i++) {
+                          studyIds.push(selectedStudies[i].value);
+                      }
+                          
+                      // get variables filtered by studies and entities
+                      attributes = brapi.search_variables({
+                          "studyDbIds" : studyIds,
+                          "traitEntities":entitiesRelated
+                      });
+                  }
 
                   attributes.map(attribute => {
-                      var traitDbIds = attribute.trait.map(trait =>{ 
-                          // if(entity != trait.entity) return;
-                          if(!trait.traitDbId) return;
-                          return trait.traitDbId;
-                      }).reduce(traitDbId =>{
-                          return traitDbId !== null;
-                      });
-                      return traitDbIds;
-                  }).all(ids =>{                    
-                      load_table("#" + traits_div, '#' + filtered_table, ids);
+                      return attribute.trait.traitDbId;
+                  }).all(attributeIds =>{                    
+                      load_table("#" + traits_div, '#' + filtered_table, attributeIds,studyIds,server_type);
                   });                   
                   
+              } else {
+                  alert("No data");
               }
           }
 
-          function load_table(filterDiv, filterTable, attribute_ids, callback){
+          function load_table(filterDiv, filterTable, attribute_ids, study_ids, server_type, callback){
 
             
               if ($.fn.dataTable.isDataTable(filterTable)) { 
@@ -157,14 +223,28 @@
                   $(filterTable).empty();                       
               }            if(attribute_ids.length < 1) return;
 
-              // var attributevalues = brapi.search_attributevalues({
-              var attributevalues = brapi.simple_brapi_call({
-                      'defaultMethod': 'post',
-                      'urlTemplate': '/search/attributevalues?pageSize=100',
-                      'params': {"attributeDbIds": attribute_ids                        
-                      },
-                      'behavior': 'fork'
-              });
+              var attributevalues;
+
+              if( server_type == "germplasm"){
+
+                  // attributevalues = brapi.search_attributevalues({
+                  attributevalues = brapi.simple_brapi_call({
+                          'defaultMethod': 'post',
+                          'urlTemplate': '/search/attributevalues?pageSize=100',
+                          'params': {"attributeDbIds": attribute_ids                        
+                          },
+                          'behavior': 'fork'
+                  });
+
+              } else if (server_type == "breeding"){            
+                  attributevalues = brapi.search_observations({
+                      "studyDbIds" : study_ids,
+                      "includeObservations" : "true",
+                      "observationVariables" : attribute_ids,
+                      "pageSize" : 10
+                  });
+
+              }
 
               currentGFilter = GraphicalFilter(
                   attributevalues,
