@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html>
     
-<head>Trait selector</head>
+<head><title>Trait selector</title></head>
 <body>
+  <br>
+  <h1 class="text-center text-primary">Trait selector</h1>
   <div id="filter_div" class="custom-dropdown" style="margin:1em"></div> 
   <div id="plant_svg"></div>
     <div class="brapp-container" style="position:relative;">      
-        <div value="brapp-wrapper" style="display:inline-block; border:solid 1px #ccc;border-radius:4px;">
+        <div value="brapp-wrapper" style="display:inline-block; border:solid 1px #ccc;border-radius:4px; margin-left: 50px;">
           <div class="brapp-body" style="background-color:#fff;border-top-left-radius:4px;border-top-right-radius:4px;">
             <div style="width:700px;padding:1em;position:relative;">
                                          
@@ -58,6 +60,7 @@ $(document).ready(function(){
         var svg_container= "plant_svg";
         var traits_div = "filter_div";
         var filtered_table = "filtered_results";
+        var server_type = data[0].servertype;
 
         $("#button_export").hide();
 
@@ -69,16 +72,14 @@ $(document).ready(function(){
         base_url+="brapi/v2";
 
         //fetch anatomy
-        fetch(data[0].anatomydb).then(function(response) {
+        fetch(data[0].svgentities).then(function(response) {
             return response.json();
-        }).then(anatomy =>{
+        }).then(svgentities =>{
              //call trait selector
-            var ts = BrAPITraitSelector(base_url,svg_container,svg_file,traits_div,filtered_table,anatomy,opts);
+            var ts = BrAPITraitSelector(base_url,svg_container,svg_file,traits_div,filtered_table,svgentities,server_type, opts);
         })    
     });
-
-
-    
+   
 });
 
 
