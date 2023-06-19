@@ -1,3 +1,3 @@
-import BrAPIBoxPlotter from "./src/BrAPITraitSelector.js";
+import BrAPITraitSelector from "./src/BrAPITraitSelector.js";
 
-export default BrAPIBoxPlotter;
+export default BrAPITraitSelector;

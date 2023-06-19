@@ -250,7 +250,7 @@
                   attributevalues,
                   baseTraits,
                   baseCols,
-                  ["Accession","AccessionId"],
+                  ["AccessionId","Accession"],
                   undefined,
                   false
               );

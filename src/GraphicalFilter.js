@@ -97,6 +97,7 @@
     data_node.all(function(data){
       for (var key in allTraits) {
         if (allTraits.hasOwnProperty(key));
+        //tableCols.push(title:key,data:"traits."+key.replace(".","\\."))
       }
     });
     
@@ -163,18 +164,28 @@
         };
         gfilter.redrawTable = function(){
           gfilter.root.updateData(gfilter.data);
-
           // clear the previous custom filter
           // we only add custom filters here, so this should be safe
           $.fn.dataTableExt.afnFiltering.pop();
 
           var currentFilter = gfilter.root.getFilter();
-          $.fn.dataTableExt.afnFiltering.push(function( _1, _2, dataIndex ){
-            return currentFilter(gfilter.data[dataIndex]);
-          });
+          var rows = [];
+          $.fn.dataTableExt.afnFiltering.push(function( _1, _2, dataIndex, rowData, counter){
+            var filtered = currentFilter(gfilter.data[dataIndex]);
+            if (counter == 0) rows = [];
+            if(filtered){
+              //Hard coded for trait selector
+              var row = rowData.data.germplasmDbId + ' ' + rowData.data.germplasmName;
+              if ($.inArray(row,rows) > -1) return false;
+              else {
+                  rows.push(row);
+                  return true;
+              }
+            }
+            return filtered;
+          });          
           gfilter.results_table.draw();
           $.fn.dataTableExt.afnFiltering.pop();//this is new in the gf check if works
-          // $("#filtered_results_wrapper").hide();
         };
         gfilter.redraw();
       });
@@ -390,21 +401,26 @@
         var dropID = "dropdown"+this.filterID;
         var newFilterMenu = fgenter.append("div")
           .classed("dropdown",true);
-        newFilterMenu.append("button")
-          .classed("btn btn-secondary dropdown-toggle",true)
-          .attr("type","button")
-          .attr("id",dropID)
-          .attr("data-toggle","dropdown")
-          .attr("aria-haspopup","true")
-          // .attr("aria-expanded","false");
-          .on("click",function(d){
-            d3.event.preventDefault();
-            d3.event.stopPropagation();console.log("d1",d);
-            var op = d.children.length==0 ? "init" : "and";
-            d.children.push(new FilterRange(d,d.depth+1,op));
-            gfilter.redraw();
-            return false;
-          });
+        // newFilterMenu.append("button")
+        //   .classed("btn btn-secondary dropdown-toggle",true)
+        //   .attr("type","button")
+        //   .attr("id",dropID)
+        //   .attr("data-toggle","dropdown")
+        //   .attr("aria-haspopup","true")
+        //   // .attr("aria-expanded","false");
+        //   .on("click",function(d){
+        //     d3.event.preventDefault();
+        //     d3.event.stopPropagation();console.log("d1",d);
+        //     var op = d.children.length==0 ? "init" : "and";console.log('d.children',d.children,d);
+        //     d.children.push(new FilterRange(d,d.depth+1,op));
+        //     gfilter.redraw();
+        //     return false;
+        //   });
+
+        if (this.children && this.children.length==0){
+            var op = this.children.length==0 ? "init" : "and";
+            this.children.push(new FilterRange(this,this.depth+1,op));
+        }
       }
 
       //draw children
